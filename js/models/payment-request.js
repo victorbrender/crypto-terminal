@@ -14,6 +14,10 @@ app.models.PaymentRequest = (function() {
                 address: '',
                 confirmed: '',
                 amount: '',
+                displayCurrency: {
+                    code: '',
+                    rate: ''
+                },
                 timestamp: (new Date).getTime(),
                 // Arbitrary data field.
                 // So that each payment method can store custom data with a payment request.
@@ -24,7 +28,7 @@ app.models.PaymentRequest = (function() {
         validate: function(attributes, options) {
 
             if (!_.isObject(attributes.data)) {
-                return '"data" must be an object.';
+                return app.i18n.t('payment-request.data.must-be-object');
             }
         }
     });

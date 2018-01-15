@@ -6,13 +6,15 @@ app.views.Main = (function() {
 
 	'use strict';
 
-	return Backbone.View.extend({
+	return app.abstracts.BaseView.extend({
 
 		el: '#app',
 		template: '#template-main',
 
 		events: {
-			'click .header-button.menu': 'toggleMenu',
+			'click #main-menu-toggle': 'toggleMainMenu',
+			'click #language-menu-toggle': 'toggleLanguageMenu',
+			'click #language-menu .menu-item': 'changeLanguage',
 			'change .display-currency-change': 'changeDisplayCurrency'
 		},
 
@@ -22,15 +24,7 @@ app.views.Main = (function() {
 
 			_.bindAll(this, 'onDocumentClick');
 			$(document).on('click', this.onDocumentClick);
-		},
-
-		render: function() {
-
-			var html = $(this.template).html();
-			var template = Handlebars.compile(html);
-			this.$el.html(template());
-			this.onRender();
-			return this;
+			app.settings.on('change:locale', this.render);
 		},
 
 		renderView: function(name, options) {
@@ -43,7 +37,7 @@ app.views.Main = (function() {
 
 			if (this.currentView) {
 
-				this.currentView.remove();
+				this.currentView.close();
 
 				if (this.currentView.className) {
 					$('body').removeClass('view-' + this.currentView.className);
@@ -51,38 +45,65 @@ app.views.Main = (function() {
 			}
 
 			this.currentView = view;
+			this.renderViewArguments = arguments;
 
 			if (view.className) {
 				$('body').addClass('view-' + view.className);
 			}
 		},
 
+		reRenderView: function() {
+
+			if (this.renderViewArguments) {
+				// Re-render the view with the same arguments as it was originally rendered.
+				this.renderView.apply(this, this.renderViewArguments);
+			}
+		},
+
 		onRender: function() {
 
-			this.$menu = this.$('#menu');
-			this.$menuToggle = this.$('.header-button.menu');
+			this.$mainMenu = this.$('#main-menu');
+			this.$mainMenuToggle = this.$('#main-menu-toggle');
+			this.$languageMenu = this.$('#language-menu');
+			this.$languageMenuToggle = this.$('#language-menu-toggle');
 			this.$viewContent = this.$('#view-content');
 			this.$message = this.$('#message');
 			this.$messageContent = this.$('#message-content');
+			this.updateLanguageToggle();
+			this.reRenderView();
 			return this;
 		},
 
-		toggleMenu: function() {
+		toggleMainMenu: function() {
 
-			this.$menu.toggleClass('visible');
+			this.$mainMenu.toggleClass('visible');
 		},
 
-		hideMenu: function() {
+		hideMainMenu: function() {
 
-			this.$menu.removeClass('visible');
+			this.$mainMenu.removeClass('visible');
+		},
+
+		toggleLanguageMenu: function() {
+
+			this.$languageMenu.toggleClass('visible');
+		},
+
+		hideLanguageMenu: function() {
+
+			this.$languageMenu.removeClass('visible');
 		},
 
 		onDocumentClick: function(evt) {
 
 			var $target = $(evt.target);
 
-			if ($target[0] !== this.$menuToggle[0]) {
-				this.hideMenu();
+			if ($target[0] !== this.$mainMenuToggle[0]) {
+				this.hideMainMenu();
+			}
+
+			if ($target[0] !== this.$languageMenuToggle[0]) {
+				this.hideLanguageMenu();
 			}
 
 			this.hideMessage();
@@ -91,9 +112,9 @@ app.views.Main = (function() {
 		showMessage: function(message) {
 
 			if (message.status === 0) {
-				this.$messageContent.text('Error: Network seems to be down');
+				this.$messageContent.text(app.i18n.t('main.message.status.0'));
 			} else {
-				this.$messageContent.text(message);
+				this.$messageContent.text(message.message || message);
 			}
 
 			this.$message.addClass('visible');
@@ -104,10 +125,46 @@ app.views.Main = (function() {
 			this.$message.removeClass('visible');
 		},
 
+		updateLanguageToggle: function() {
+
+			var locale = app.settings.get('locale') || app.config.defaultLocale;
+			_.each(_.keys(app.lang), function(key) {
+				this.$languageMenuToggle.removeClass(key);
+			}, this);
+			this.$languageMenuToggle.addClass(locale);
+		},
+
+		changeLanguage: function(evt) {
+
+			// Prevent navigation event when clicking a link:
+			evt.preventDefault();
+
+			var $target = $(evt.target);
+			var newLocale = $target.attr('data-locale');
+			app.settings.set('locale', newLocale).save();
+		},
+
 		changeDisplayCurrency: function(evt) {
 
-			console.log('changeDisplayCurrency');
 			app.settings.set('displayCurrency', $(evt.target).val()).save();
+		},
+
+		onClose: function() {
+
+			$(document).off('click', this.onDocumentClick);
+			app.settings.off('change:locale', this.render);
+		},
+
+		serializeData: function() {
+
+			var data = {};
+			data.languages = _.map(_.keys(app.lang), function(key) {
+				return {
+					key: key,
+					label: app.i18n.t('language.' + key)
+				};
+			});
+			return data;
 		}
 
 	});

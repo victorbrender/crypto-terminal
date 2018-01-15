@@ -6,28 +6,27 @@ app.views.DisplayPaymentAddress = (function() {
 
 	'use strict';
 
-	return Backbone.View.extend({
+	return app.abstracts.BaseView.extend({
 
 		className: 'display-payment-address',
 
 		template: '#template-pay-address',
 
 		events: {
-			'click .cancel': 'cancel'
+			'click .cancel': 'cancel',
+			'click .back': 'back'
 		},
 
 		paymentId: '',
 
-		initialize: function(options) {
+		initialize: function() {
 
-			this.options = options || {};
+			_.bindAll(this, 'listenForPayment');
 		},
 
-		render: function() {
+		serializeData: function() {
 
-			var html = $(this.template).html();
-			var template = Handlebars.compile(html);
-			var data = {
+			return {
 				amount: {
 					display: {
 						value: this.options.amount,
@@ -38,10 +37,6 @@ app.views.DisplayPaymentAddress = (function() {
 					}
 				}
 			};
-
-			this.$el.html(template(data));
-			this.onRender();
-			return this;
 		},
 
 		onRender: function() {
@@ -64,7 +59,7 @@ app.views.DisplayPaymentAddress = (function() {
 				this.updateQrCode(displayAmount);
 			} else {
 				// Convert the display amount to the real amount in the desired cryptocurrency.
-				paymentMethod.convertAmount(displayAmount, displayCurrency, _.bind(function(error, amount) {
+				paymentMethod.convertAmount(displayAmount, displayCurrency, _.bind(function(error, amount, displayCurrencyExchangeRate, displayCurrency) {
 
 					if (error) {
 						this.resetQrCode();
@@ -72,7 +67,7 @@ app.views.DisplayPaymentAddress = (function() {
 					}
 
 					this.renderCryptoAmount(amount);
-					this.updateQrCode(amount);
+					this.updateQrCode(amount, displayCurrencyExchangeRate, displayCurrency);
 
 				}, this));
 			}
@@ -106,7 +101,7 @@ app.views.DisplayPaymentAddress = (function() {
 			this.$addressText.empty();
 		},
 
-		updateQrCode: function(amount) {
+		updateQrCode: function(amount, displayCurrencyExchangeRate, displayCurrency) {
 
 			var paymentMethod = app.paymentMethods[this.options.method];
 			var savePaymentInPaymentHistory = _.bind(this.savePaymentInPaymentHistory, this);
@@ -117,61 +112,79 @@ app.views.DisplayPaymentAddress = (function() {
 					return app.mainView.showMessage(error);
 				}
 				var amountFromPaymentRequest = paymentRequest.split('=')[1];
-				savePaymentInPaymentHistory(paymentMethod.code, address, false, amountFromPaymentRequest);
+				savePaymentInPaymentHistory(paymentMethod.code, address, false, amountFromPaymentRequest, displayCurrencyExchangeRate, displayCurrency);
 				this.renderQrCode(paymentRequest);
 				this.renderAddress(address);
-				this.listenForPayment(paymentRequest);
+				this.startListeningForPayment(paymentRequest);
 
 			}, this));
 		},
 
+		startListeningForPayment: function(paymentRequest) {
+
+			this._listenForPaymentTimeout = _.delay(
+				this.listenForPayment,
+				app.config.displayPaymentAddress.listener.delays.first,
+				paymentRequest
+			);
+		},
+
+		stopListeningForPayment: function() {
+
+			if (this._listenForPaymentTimeout) {
+				clearTimeout(this._listenForPaymentTimeout);
+			}
+		},
+
 		listenForPayment: function(paymentRequest) {
 
-			var paymentMethod = app.paymentMethods[this.options.method];
 			var received;
-			var updateToConfirmedPaymentInPaymentHistroy = _.bind(this.updateToConfirmedPaymentInPaymentHistroy, this);
+			var startTime = (new Date).getTime();
+			var timeout = app.config.displayPaymentAddress.listener.timeout;
+			var waitBetween = app.config.displayPaymentAddress.listener.delays.between;
+			var paymentMethod = app.paymentMethods[this.options.method];
+			var updatePaymentHistory = _.bind(this.updatePaymentHistory, this);
 
-			// Delay times in milliseconds:
-			var delays = {
-				// Wait time before the first check:
-				first: 10000,
-				// Wait time between checks:
-				between: 5000,
-				// When to stop performing checks:
-				timeout: 180000
-			};
+			var iteratee = _.bind(function(next) {
 
-			setTimeout(function() {
-				var startTime = (new Date).getTime();
-				async.until(function() {
-					// If the following returns RETURN, the loop will stop.
-					return received || ((new Date).getTime() - startTime) >= delays.timeout;
-				}, function(next) {
-					paymentMethod.checkPaymentReceived(paymentRequest, function(error, wasReceived, amountReceived) {
-						if (error) return next(error);
-						if (wasReceived) {
-							received = true;
-							updateToConfirmedPaymentInPaymentHistroy();
-							return next();
-						}
-						// Wait before checking again.
-						setTimeout(next, delays.between);
-					});
-				}, function(error) {
+				paymentMethod.checkPaymentReceived(paymentRequest, _.bind(function(error, wasReceived) {
 
 					if (error) {
-						return app.mainView.showMessage(error);
+						return next(error);
 					}
 
-					if (received) {
-						// Show success screen.
-						app.router.navigate('confirmed', { trigger: true });
-					} else {
-						app.mainView.showMessage(new Error('Timed out while waiting for payment'));
+					if (wasReceived) {
+						received = true;
+						updatePaymentHistory();
+						return next();
 					}
 
-				});
-			}, delays.first);
+					// Wait before checking again.
+					this._listenForPaymentTimeout = _.delay(next, waitBetween);
+
+				}, this));
+
+			}, this);
+
+			var onDone = _.bind(function(error) {
+
+				if (error) {
+					return app.mainView.showMessage(error);
+				}
+
+				if (received) {
+					// Show success screen.
+					app.router.navigate('confirmed', { trigger: true });
+				} else {
+					app.mainView.showMessage(new Error(app.i18n.t('pay-address.timeout')));
+				}
+
+			}, this);
+
+			async.until(function() {
+				// If the following returns TRUE, the loop will stop.
+				return received || ((new Date).getTime() - startTime) >= timeout;
+			}, iteratee, onDone);
 		},
 
 		cancel: function() {
@@ -180,12 +193,23 @@ app.views.DisplayPaymentAddress = (function() {
 			app.router.navigate('pay', { trigger: true });
 		},
 
-		savePaymentInPaymentHistory : function(currency, address, confirmed, amountReceived) {
+		back: function() {
+			var amount = this.options.amount.toString();
+
+			// Navigate back to the payment method screen.
+			app.router.navigate('pay/' + encodeURIComponent(amount), { trigger: true });
+		},
+
+		savePaymentInPaymentHistory : function(currency, address, confirmed, amountReceived, displayCurrencyExchangeRate, displayCurrency) {
 			var paymentTransaction = new app.models.PaymentRequest({
 				currency: currency,
 				address: address,
 				confirmed: confirmed,
-				amount: amountReceived
+				amount: amountReceived,
+				displayCurrency: {
+					code: displayCurrency,
+					rate: displayCurrencyExchangeRate
+				}
 			})
 			app.paymentRequests.add(paymentTransaction);
 			paymentTransaction.save().then(_.bind(function() {
@@ -193,12 +217,17 @@ app.views.DisplayPaymentAddress = (function() {
 			}, this));
 		},
 
-		updateToConfirmedPaymentInPaymentHistroy: function() {
+		updatePaymentHistory: function() {
 			if (!this.paymentId) {
-				app.mainView.showMessage(new Error('There is no payment id'));
+				app.mainView.showMessage(new Error(app.i18n.t('pay-address.missing-payment-id')));
 			}
 			var paymentTransaction = app.paymentRequests.get(this.paymentId);
 			paymentTransaction.save({confirmed: true});
+		},
+
+		onClose: function() {
+
+			this.stopListeningForPayment();
 		}
 
 	});

@@ -1,5 +1,3 @@
-// PaymentHistory
-
 var app = app || {};
 
 app.views = app.views || {};
@@ -8,7 +6,7 @@ app.views.PaymentHistory = (function() {
 
 	'use strict';
 
-	return Backbone.View.extend({
+	return app.abstracts.BaseView.extend({
 
 		className: 'payment-history',
 		template: '#template-payment-history',
@@ -17,29 +15,29 @@ app.views.PaymentHistory = (function() {
 			'click .payment-history-item': 'gotoPaymentDetails'
 		},
 
-		render: function() {
-			var data = {};
+		initialize: function() {
 
-			app.paymentRequests.fetch({
-				success: function(response) {
-					data.payments = _.map(response.models, function(model) {
-						return model.attributes;
-					})
-				},
+			this.collection = app.paymentRequests;
+
+			this.collection.fetch({
 				error: function() {
-					throw new Error('Fail to get Payments!');
+					app.main.showMessage(app.i18n.t('payment-history.failed-to-get-payment-data'));
 				}
-			})
-
-			var html = $(this.template).html();
-			var template = Handlebars.compile(html);
-			this.$el.html(template(data));
-			return this;
+			});
 		},
 
-		gotoPaymentDetails: function(ev) {
+		serializeData: function() {
 
-			var paymentId = $(ev.currentTarget).attr('data-payment-id');
+			var data = {};
+			data.payments = _.map(this.collection.models, function(model) {
+				return model.attributes;
+			})
+			return data;
+		},
+
+		gotoPaymentDetails: function(evt) {
+
+			var paymentId = $(evt.currentTarget).attr('data-payment-id');
 			app.router.navigate('payment-details/' + paymentId, { trigger: true });
 		}
 	});
