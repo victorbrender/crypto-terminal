@@ -1,3 +1,4 @@
+.gradle/
 build/
 node_modules/
 public/
@@ -6,4 +7,5 @@ platforms/
 plugins/
 www/
 package-lock.json
+npm-debug.log
 .DS_Store
