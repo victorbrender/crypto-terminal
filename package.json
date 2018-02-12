@@ -2,9 +2,12 @@
   "name": "crypto-terminal",
   "version": "1.0.0",
   "description": "A merchant terminal app which allows payments by customers via multiple cryptocurrencies.",
+  "app": {
+    "name": "CryptoTerminal"
+  },
   "main": "index.js",
   "scripts": {
-    "android-device": "grunt build && cordova platform remove android && cordova platform add android && cordova run android --device",
+    "android-device": "grunt build && cordova run android --device",
     "start": "grunt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,7 +22,7 @@
   "license": "AGPL-3.0",
   "homepage": "https://github.com/Learn-by-doing/crypto-terminal",
   "dependencies": {
-    "async": "2.3.0",
+    "async": "2.6.0",
     "babel-core": "6.26.0",
     "babel-preset-es2015": "6.24.1",
     "babelify": "8.0.0",

@@ -13,7 +13,9 @@ module.exports = {
 			'build/css/menu.min.css',
 			'build/css/amount.min.css',
 			'build/css/numpad.min.css',
-			'build/css/views/*.min.css'
+			'build/css/slider.min.css',
+			'build/css/views/*.min.css',
+			'build/css/responsive.min.css'
 		],
 		dest: 'build/all.min.css'
 	},
@@ -44,6 +46,7 @@ module.exports = {
 			'js/services/*.js',
 			'js/models/*.js',
 			'js/collections/*.js',
+			'js/views/utility/*.js',
 			'js/views/*.js',
 			'js/payment-methods/*.js',
 			'js/config.js',
@@ -80,6 +83,7 @@ module.exports = {
 			'build/js/services/*.min.js',
 			'build/js/models/*.min.js',
 			'build/js/collections/*.min.js',
+			'build/js/views/utility/*.min.js',
 			'build/js/views/*.min.js',
 			'build/js/payment-methods/*.min.js',
 			'build/js/config.min.js',

@@ -22,6 +22,18 @@ app.config = (function() {
 				}
 			}
 		},
+		httpRequests: {
+			timeBetweenRequests: 100
+		},
+		retryRequest: {
+			// how many times it tries with an api when request fails (times):
+			times: 5,
+			// try calling apiMethod X times with exponential backoff (milliseconds):
+			// (i.e. intervals of 100, 200, 400, 800, 1600, ...)
+			interval: function(retryCount) {
+				return 200 * Math.pow(2, retryCount);
+			}
+		},
 		settings: [
 			{
 				name: 'displayCurrency',
@@ -52,6 +64,32 @@ app.config = (function() {
 						}
 					]
 				)
+			},
+			{
+				name: 'dateFormat',
+				label: function() {
+					return app.i18n.t('settings.date-format.label');
+				},
+				type: 'select',
+				required: true,
+				options: [
+					{
+						key: 'MMMM Do YYYY, h:mm:ss A',
+						label: moment().format('MMMM Do YYYY, h:mm:ss A')
+					},
+					{
+						key: 'lll',
+						label: moment().format('lll')
+					},
+					{
+						key: 'LLLL',
+						label: moment().format('LLLL')
+					},
+					{
+						key: 'DD/MM/YYYY hh:mm:ss',
+						label: moment().format('DD/MM/YYYY hh:mm:ss')
+					}
+				]
 			}
 		]
 	};
