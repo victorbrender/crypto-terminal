@@ -8,6 +8,7 @@ app.lang['cs'] = (function() {
 		'language.cs': 'Čeština',
 		'language.en': 'Angličtina',
 		'language.es': 'Španělština',
+		'language.ro': 'Rumunsko',
 		'main.message.status.0': 'Chyba: Síťové spojení bylo zřejmě přerušeno',
 		'menu.settings': 'Nastavení',
 		'menu.payment-history': 'Historie plateb',
