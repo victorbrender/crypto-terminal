@@ -44,6 +44,17 @@ app.paymentMethods.bitcoin = (function() {
 				'error-beforesaving': 'Error antes de guardar settings',
 				'settings.error-getting-gap-limit': 'Error obteniendo "gap limit"'
 			},
+			'ro': {
+				'settings.xpub.label': 'Cheia Publica Generala',
+				'settings.xpub.invalid': 'Cheia publica generala invalida',
+				'invalid-payment-request': 'Cerere de plata invalida',
+				'xpub-required': 'Cheia publica generala este obligatorie',
+				'invalid-parent-fingerprint': 'Amprenta parintelui e invalida',
+				'invalid-network-version': 'Versiunea retelei e invalida',
+				'private-keys-warning': 'ATENTIE: Nu folositi chei private in aceasta aplicatie!',
+				'error-beforesaving': 'Eroare inainte de salvarea preferintelor',
+				'settings.error-getting-gap-limit': 'Eroare in timpul obtinerii "gap limit".'
+			}
 		},
 
 		settings: [

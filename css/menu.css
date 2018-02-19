@@ -93,6 +93,10 @@
 #language-menu .menu-item.es {
 	background-image: url('../images/flags/es.svg');
 }
+#language-menu-toggle.ro,
+#language-menu .menu-item.ro {
+	background-image: url('../images/flags/ro.svg');
+}
 #language-menu.menu {
 	left: initial;
 	right: -80%;

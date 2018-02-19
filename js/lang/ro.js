@@ -2,7 +2,7 @@ var app = app || {};
 
 app.lang = app.lang || {};
 
-app.lang['en'] = (function() {
+app.lang['ro'] = (function() {
 
 	return {
 		'language.cs': 'Ceha',
