@@ -21,7 +21,8 @@ app.views.DisplayPaymentAddress = (function() {
 
 		initialize: function() {
 
-			_.bindAll(this, 'listenForPayment');
+			_.bindAll(this, 'listenForPayment', 'onResize');
+			$(window).on('resize', this.onResize);
 		},
 
 		serializeData: function() {
@@ -41,6 +42,7 @@ app.views.DisplayPaymentAddress = (function() {
 
 		onRender: function() {
 
+			this.$address = this.$('.address');
 			this.$addressQrCode = this.$('.address-qr-code');
 			this.$addressText = this.$('.address-text');
 			this.$cryptoAmount = this.$('.crypto.amount');
@@ -75,11 +77,19 @@ app.views.DisplayPaymentAddress = (function() {
 
 		renderQrCode: function(data) {
 
-			var qr = qrcode(4, 'L');
-			qr.addData(data);
-			qr.make();
-			var img = qr.createImgTag(app.config.qrCodes.cellSize, app.config.qrCodes.margin);
-			this.$addressQrCode.html($(img).addClass('address-qr-code-img'));
+			var width = Math.min(
+				this.$address.width(),
+				this.$address.height()
+			);
+
+			app.util.renderQrCode(this.$addressQrCode/* $target */, data, {
+				width: width,
+			}, function(error) {
+
+				if (error) {
+					return app.mainView.showMessage(error);
+				}
+			});
 		},
 
 		renderAddress: function(address) {
@@ -104,17 +114,27 @@ app.views.DisplayPaymentAddress = (function() {
 		updateQrCode: function(amount, displayCurrencyExchangeRate, displayCurrency) {
 
 			var paymentMethod = app.paymentMethods[this.options.method];
-			var savePaymentInPaymentHistory = _.bind(this.savePaymentInPaymentHistory, this);
 
-			paymentMethod.generatePaymentRequest(amount, _.bind(function(error, paymentRequest, address) {
+			paymentMethod.generatePaymentRequest(amount, _.bind(function(error, paymentRequest) {
+
 				if (error) {
 					this.resetQrCode();
 					return app.mainView.showMessage(error);
 				}
-				var amountFromPaymentRequest = paymentRequest.split('=')[1];
-				savePaymentInPaymentHistory(paymentMethod.code, address, false, amountFromPaymentRequest, displayCurrencyExchangeRate, displayCurrency);
-				this.renderQrCode(paymentRequest);
-				this.renderAddress(address);
+				this.paymentRequest = paymentRequest;
+				this.savePaymentInPaymentHistory({
+					currency: paymentMethod.code,
+					address: paymentRequest.address,
+					confirmed: false,
+					amount: paymentRequest.amount,
+					displayCurrency: {
+						code: displayCurrency,
+						rate: displayCurrencyExchangeRate
+					},
+					data: paymentRequest.data || {},
+				});
+				this.renderQrCode(paymentRequest.uri);
+				this.renderAddress(paymentRequest.address);
 				this.startListeningForPayment(paymentRequest);
 
 			}, this));
@@ -200,20 +220,9 @@ app.views.DisplayPaymentAddress = (function() {
 			app.router.navigate('pay/' + encodeURIComponent(amount), { trigger: true });
 		},
 
-		savePaymentInPaymentHistory : function(currency, address, confirmed, amountReceived, displayCurrencyExchangeRate, displayCurrency) {
-			var paymentTransaction = new app.models.PaymentRequest({
-				currency: currency,
-				address: address,
-				confirmed: confirmed,
-				amount: amountReceived,
-				displayCurrency: {
-					code: displayCurrency,
-					rate: displayCurrencyExchangeRate
-				}
-			})
-			app.paymentRequests.add(paymentTransaction);
-			paymentTransaction.save().then(_.bind(function() {
-				this.paymentId = paymentTransaction.id;
+		savePaymentInPaymentHistory: function(data) {
+			app.paymentRequests.add(data).save().then(_.bind(function(model) {
+				this.paymentId = model.id;
 			}, this));
 		},
 
@@ -225,9 +234,22 @@ app.views.DisplayPaymentAddress = (function() {
 			paymentTransaction.save({confirmed: true});
 		},
 
+		reRenderQrCode: function() {
+
+			if (this.paymentRequest) {
+				this.renderQrCode(this.paymentRequest.uri);
+			}
+		},
+
+		onResize: function() {
+
+			this.reRenderQrCode();
+		},
+
 		onClose: function() {
 
 			this.stopListeningForPayment();
+			$(window).off('resize', this.onResize);
 		}
 
 	});

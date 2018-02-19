@@ -13,6 +13,7 @@ module.exports = {
 			'build/css/menu.min.css',
 			'build/css/amount.min.css',
 			'build/css/numpad.min.css',
+			'build/css/overlay.min.css',
 			'build/css/slider.min.css',
 			'build/css/views/*.min.css',
 			'build/css/responsive.min.css'
@@ -30,11 +31,15 @@ module.exports = {
 			'node_modules/backbone/backbone.js',
 			'node_modules/backbone.localstorage/build/backbone.localStorage.js',
 			'node_modules/handlebars/dist/handlebars.js',
-			'node_modules/qrcode-generator/qrcode.js',
+			'node_modules/qrcode/build/qrcode.js',
+			'node_modules/fastclick/lib/fastclick.js',
+			'node_modules/js-sha3/build/sha3.min.js',
 			'build/bitcoin.js',
-			'build/bs58check.js',
+			'build/bs58.js',
 			'build/buffer.js',
 			'build/ecurve.js',
+			'build/querystring.js',
+			'node_modules/sjcl/sjcl.js',
 			'node_modules/moment/moment.js',
 
 			// Application files:
@@ -67,11 +72,15 @@ module.exports = {
 			'node_modules/backbone/backbone-min.js',
 			'node_modules/backbone.localstorage/build/backbone.localStorage.min.js',
 			'node_modules/handlebars/dist/handlebars.min.js',
-			'build/qrcode-generator/qrcode.min.js',
+			'node_modules/qrcode/build/qrcode.min.js',
+			'build/fastclick.min.js',
+			'node_modules/js-sha3/build/sha3.min.js',
 			'build/bitcoin.min.js',
-			'build/bs58check.min.js',
+			'build/bs58.min.js',
 			'build/buffer.min.js',
 			'build/ecurve.min.js',
+			'build/querystring.min.js',
+			'build/sjcl.min.js',
 			'node_modules/moment/min/moment.min.js',
 
 			// Application files:

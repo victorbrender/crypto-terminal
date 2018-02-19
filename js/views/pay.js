@@ -135,7 +135,11 @@ app.views.Pay = (function() {
 				// Don't add if there is no value:
 				!value ||
 				// In the case of a dot, only add if there isn't already a dot:
-				(value === '.' && this.amount.indexOf('.') !== -1)
+				(value === '.' && this.amount.indexOf('.') !== -1) ||
+				// to keep this.amount var without leading zeroes.
+				(value == 0 && this.amount == 0) ||
+				// max length of amount so it does not overflow the UI.
+				(this.amount.length > 11)
 			) {
 				return;
 			}
@@ -169,7 +173,7 @@ app.views.Pay = (function() {
 				return this.showError(app.i18n.t('pay-enter-amount.valid-number'));
 			}
 
-			if (!amount.greaterThan(0)) {
+			if (!amount.isGreaterThan(0)) {
 				return this.showError(app.i18n.t('pay-enter-amount.greater-than-zero'));
 			}
 

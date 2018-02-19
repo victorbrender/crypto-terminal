@@ -6,8 +6,8 @@ app.config = (function() {
 
 	var config = {
 		qrCodes: {
-			cellSize: 5,
-			margin: 0
+			errorCorrectionLevel: 'M',
+			margin: 0,
 		},
 		defaultLocale: 'en',
 		displayPaymentAddress: {
@@ -34,6 +34,10 @@ app.config = (function() {
 				return 200 * Math.pow(2, retryCount);
 			}
 		},
+		sliders: {
+			speedThreshold: 0.4,// pixels / millisecond
+		},
+		numberOfSampleAddressesToShow: 5,
 		settings: [
 			{
 				name: 'displayCurrency',
